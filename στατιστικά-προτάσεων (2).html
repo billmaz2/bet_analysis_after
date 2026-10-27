@@ -1,0 +1,481 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Στατιστικά Προτάσεων</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap&subset=greek">
+<style>
+/* Layout: one column. Paste box on top, then four result panels in the order the user listed them. */
+:root {
+  --bg: #f3f5f8;
+  --panel: #ffffff;
+  --fg: #141a22;
+  --muted: #5a6574;
+  --rule: #dce1e8;
+  --accent: #2a5bd7;
+  --ok: #17803f;
+  --bad: #c8312f;
+  --warn: #9a6a00;
+  --sans: "IBM Plex Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1319; --panel: #151b23; --fg: #e7ebf1; --muted: #96a1b0; --rule: #28313c;
+    --accent: #8cb0ff; --ok: #4cc888; --bad: #ff7a72; --warn: #e2b04a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1319; --panel: #151b23; --fg: #e7ebf1; --muted: #96a1b0; --rule: #28313c;
+  --accent: #8cb0ff; --ok: #4cc888; --bad: #ff7a72; --warn: #e2b04a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 400 15px/1.55 var(--sans);
+  padding-block: 1.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem; }
+h1 { font: 600 1.7rem/1.2 var(--sans); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.05rem/1.3 var(--sans); margin: 0; }
+p { margin: 0; }
+.sub { color: var(--muted); max-width: 70ch; margin-top: .35rem; }
+.panel { background: var(--panel); border: 1px solid var(--rule); }
+.ph { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3rem 1rem; padding: .8rem 1rem; border-bottom: 1px solid var(--rule); }
+.ph .tag { font: 500 12px var(--mono); color: var(--muted); letter-spacing: .04em; }
+.pb { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+textarea { width: 100%; min-height: 190px; resize: vertical; font: 400 12.5px/1.5 var(--mono); color: var(--fg); background: var(--bg); border: 1px solid var(--rule); padding: .7rem; white-space: pre; overflow: auto; tab-size: 4; }
+textarea:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, .pt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; align-items: end; gap: .7rem 1.2rem; }
+.row label { display: flex; flex-direction: column; gap: .25rem; font: 500 12px var(--mono); color: var(--muted); min-width: 0; }
+.row input, .row select { font: 500 14px var(--mono); color: var(--fg); background: var(--bg); border: 1px solid var(--rule); padding: .4rem .5rem; min-width: 0; }
+.row input[type=number] { width: 5.2rem; }
+.btn { font: 500 13px var(--mono); color: var(--fg); background: transparent; border: 1px solid var(--fg); padding: .42rem .75rem; cursor: pointer; }
+.btn:hover { background: var(--rule); }
+.status { font: 400 13px var(--mono); color: var(--muted); }
+.status b { color: var(--fg); font-weight: 500; }
+.warns { display: flex; flex-direction: column; gap: .3rem; font-size: 13.5px; }
+.warns div { border-left: 3px solid var(--warn); padding-left: .7rem; }
+details { border: 1px solid var(--rule); }
+summary { cursor: pointer; padding: .55rem .8rem; font: 500 13px var(--mono); color: var(--muted); }
+details .row { padding: .2rem .8rem .8rem; }
+
+/* result bits */
+.big { display: flex; flex-wrap: wrap; gap: 1rem 2.5rem; align-items: baseline; }
+.big .n { font: 500 2.6rem/1 var(--mono); font-variant-numeric: tabular-nums; }
+.big .l { color: var(--muted); font-size: 13.5px; }
+.bars { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) minmax(7.5rem, auto); gap: .65rem 1rem; align-items: center; }
+.bars .sg { font: 500 1.1rem var(--mono); }
+.bars .tr { height: 22px; background: var(--bg); border: 1px solid var(--rule); position: relative; }
+.bars .tr i { position: absolute; inset: 0 auto 0 0; background: var(--accent); display: block; }
+.bars .tr u { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px solid var(--fg); }
+.bars .v { font: 500 13.5px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.bars .v small { display: block; color: var(--muted); font-weight: 400; font-size: 11.5px; }
+@media (max-width: 520px) { .bars { grid-template-columns: 2.4rem minmax(0, 1fr); } .bars .v { grid-column: 2; text-align: left; margin-top: -.4rem; } }
+.hint { color: var(--muted); font-size: 13px; }
+.tw { overflow-x: auto; border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: .45rem .7rem; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font: 500 11.5px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--bg); position: sticky; top: 0; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.pos { color: var(--ok); } .neg { color: var(--bad); }
+.chip { font: 500 12px var(--mono); padding: .1rem .5rem; border: 1px solid currentColor; }
+.chip.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.chip.no { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.scroll { max-height: 360px; overflow: auto; }
+
+/* charts */
+svg.ch { display: block; width: 100%; height: auto; }
+svg .gl { stroke: var(--rule); stroke-width: 1; }
+svg .axl { stroke: var(--muted); stroke-width: 1.2; }
+svg .tk { fill: var(--muted); font: 11px var(--mono); }
+svg .at { fill: var(--fg); font: 500 12px var(--mono); }
+svg .okp { fill: var(--ok); stroke: var(--panel); stroke-width: 1.5; }
+svg .nop { fill: var(--bad); stroke: var(--panel); stroke-width: 1.5; }
+svg .pt { cursor: pointer; }
+svg .pt:hover .okp, svg .pt:hover .nop, svg .pt:focus .okp, svg .pt:focus .nop { stroke: var(--fg); stroke-width: 2.4; }
+svg .ln { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linejoin: round; }
+svg .zl { stroke: var(--fg); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.legend { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; font: 500 12.5px var(--mono); color: var(--muted); }
+.legend i { display: inline-block; width: 11px; height: 11px; margin-right: .4rem; vertical-align: -1px; }
+.read { font: 400 13px/1.5 var(--mono); border: 1px solid var(--rule); background: var(--bg); padding: .6rem .8rem; min-height: 3.2rem; overflow-wrap: anywhere; }
+.empty { color: var(--muted); padding: .5rem 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Στατιστικά Προτάσεων</h1>
+    <p class="sub">Επικόλλησε τον πίνακα από το Excel ή το Google Sheets. Η ανάλυση ανανεώνεται καθώς πληκτρολογείς, με τις στήλες στις θέσεις που φαίνονται στο δείγμα.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="h-in">
+    <div class="ph"><h2 id="h-in">Πίνακας εισόδου</h2><span class="tag">στήλες χωρισμένες με tab</span></div>
+    <div class="pb">
+      <textarea id="inp" spellcheck="false" aria-label="Πίνακας αγώνων"></textarea>
+      <div class="row">
+        <button type="button" class="btn" id="b-sample">Επαναφορά δείγματος</button>
+        <button type="button" class="btn" id="b-clear">Καθαρισμός</button>
+        <label>Επιτυχία από
+          <select id="succ-mode">
+            <option value="col">στήλη ΕΠΙΤΥΧΙΑ (με έλεγχο)</option>
+            <option value="calc">πρόταση = αποτέλεσμα</option>
+          </select>
+        </label>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <div class="warns" id="warns"></div>
+      <details>
+        <summary>Θέσεις στηλών (αρίθμηση από το 1, όπως στο Excel)</summary>
+        <div class="row">
+          <label>Πρόταση <input type="number" id="m-prop" min="1" value="15"></label>
+          <label>ΑΠΟΤΕΛ <input type="number" id="m-res" min="1" value="20"></label>
+          <label>ΕΠΙΤΥΧΙΑ <input type="number" id="m-succ" min="1" value="21"></label>
+          <label>ΑΣΣΟΣ Π (μετά ΧΙ, ΔΙΠΛΟ) <input type="number" id="m-pre" min="1" value="12"></label>
+          <label>ΑΣΣΟΣ Μ (μετά ΧΙ, ΔΙΠΛΟ) <input type="number" id="m-post" min="1" value="25"></label>
+          <label>Διοργάνωση <input type="number" id="m-lg" min="1" value="5"></label>
+          <label>Γηπεδούχος <input type="number" id="m-home" min="1" value="10"></label>
+          <label>Φιλοξενούμενος <input type="number" id="m-away" min="1" value="11"></label>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h1s">
+    <div class="ph"><h2 id="h1s">1. Ποσοστό επιτυχίας ανά πρόταση 1 / Χ / 2</h2><span class="tag">ράβδος: ποσοστό · γραμμή: συνολικό ποσοστό</span></div>
+    <div class="pb" id="s1"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h2s">
+    <div class="ph"><h2 id="h2s">2. Γενικό ποσοστό επιτυχίας</h2></div>
+    <div class="pb" id="s2"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h3s">
+    <div class="ph"><h2 id="h3s">3. Γράφημα 2Δ: ΑΣΣΟΣ Π και PCA των ΧΙ Π, ΔΙΠΛΟ Π</h2></div>
+    <div class="pb">
+      <div class="legend"><span><i style="background:var(--ok);border-radius:50%"></i>Επιτυχία</span><span><i style="background:var(--bad);transform:rotate(45deg)"></i>Αποτυχία</span></div>
+      <div id="s3"></div>
+      <div class="read" id="sc-read">Διάλεξε ένα σημείο για να δεις τον αγώνα.</div>
+      <p class="hint" id="pca-note"></p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h4s">
+    <div class="ph"><h2 id="h4s">4. Αν είχες παίξει κάθε πρόταση ένα ένα</h2><span class="tag">απόδοση = η στήλη Π του σημείου που προτάθηκε</span></div>
+    <div class="pb">
+      <div class="row">
+        <label>Ποντάρισμα ανά αγώνα <input type="number" id="stake" min="0" step="any" value="1"></label>
+        <label>Αποδόσεις
+          <select id="odds-set">
+            <option value="pre">Π (ΑΣΣΟΣ Π, ΧΙ Π, ΔΙΠΛΟ Π)</option>
+            <option value="post">Μ (ΑΣΣΟΣ Μ, ΧΙ Μ, ΔΙΠΛΟ Μ)</option>
+          </select>
+        </label>
+      </div>
+      <div id="s4"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h45s">
+    <div class="ph"><h2 id="h45s">5. Αν είχες παίξει όλες τις δυάδες / τριάδες / τετράδες</h2><span class="tag">όλοι οι συνδυασμοί αγώνων · πολλαπλά</span></div>
+    <div class="pb">
+      <div class="row">
+        <label>Ποντάρισμα ανά συνδυασμό <input type="number" id="c-stake" min="0" step="any" value="1"></label>
+        <label>Αποδόσεις
+          <select id="c-odds">
+            <option value="pre">Π (ΑΣΣΟΣ Π, ΧΙ Π, ΔΙΠΛΟ Π)</option>
+            <option value="post">Μ (ΑΣΣΟΣ Μ, ΧΙ Μ, ΔΙΠΛΟ Μ)</option>
+          </select>
+        </label>
+      </div>
+      <div id="s45"></div>
+      <p class="hint">Κάθε συνδυασμός παίζεται ως πολλαπλό (παρλί) με σταθερό ποντάρισμα: κερδίζει μόνο αν επιτύχουν όλα τα σημεία του. Απόδοση συνδυασμού = γινόμενο των αποδόσεων των σημείων. Κέρδος = ποντάρισμα × (απόδοση − 1), ζημιά = −ποντάρισμα.</p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h5s">
+    <div class="ph"><h2 id="h5s">Αγώνες που διαβάστηκαν</h2></div>
+    <div class="pb"><div id="s5"></div></div>
+  </section>
+</div>
+
+<script>
+(function () {
+'use strict';
+var $ = function (s) { return document.querySelector(s); };
+var KEY = 'stat-protaseis-input-v1';
+
+var SAMPLE = [
+'Φ|ΤΕΛ Γ|ΑΠΟΤΕΛ|ΕΠΙΤΥΧΙΑ|ΗΜΡΜ ΑΠΟ|ΜΕΡΑ ΑΠΟ|ΩΡΑ ΑΠΟ|ΑΣΣΟΣ Μ|ΧΙ Μ|ΔΙΠΛΟ Μ',
+'1|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΙΤΑΛΙΑ Β|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|349|ΕΜΠΟΛΙ|ΒΙΤΣΕΝΖΑ|2.57|3.35|2.55|Χ|0|1|0|2|2|0|27/10/2026|ΤΡΙΤΗ|12|2.57|3.35|2.55',
+'2|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΓΕΡΜΑΝΙΑ Β|ΠΑΡΑΣΚΕΥΗ|23/10/2026|19|315|ΝΤΑΡΜΣΤΑΝΤ|ΣΕΝΤ ΠΑΟΥΛΙ|2.9|3.4|2.25|Χ|0|0|0|0|Χ|1|27/10/2026|ΤΡΙΤΗ|12|2.9|3.4|2.25',
+'3|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΙΣΠΑΝΙΑ Β|ΚΥΡΙΑΚΗ|25/10/2026|17|751|ΑΛΜΠΑΘΕΤΕ|Κ.ΝΤΕ ΕΛΝΤΕΝΣΕ|2.17|3.4|3.05|1|2|0|2|0|1|1|27/10/2026|ΤΡΙΤΗ|12|2.25|3.4|2.9',
+'4|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΙΣΠΑΝΙΑ Β|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|348|ΓΡΑΝΑΔΑ|ΒΑΓΙΑΔΟΛΙΔ|2.12|3.25|3.3|1|1|0|2|1|1|1|27/10/2026|ΤΡΙΤΗ|12|2.1|3.3|3.35',
+'5|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΙΣΠΑΝΙΑ Β|ΣΑΒΒΑΤΟ|24/10/2026|19|586|ΛΑΣ ΠΑΛΜΑΣ|ΣΟΣΙΕΔΑΔ|2|3.5|3.35|X|1|0|1|0|1|0|27/10/2026|ΤΡΙΤΗ|12|2.12|3.5|3.25',
+'6|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΓΑΛΛΙΑ Β|ΣΑΒΒΑΤΟ|24/10/2026|15|429|ΝΤΙΖΟΝ|ΡΟΝΤΕΖ|2|3.65|3.25|Χ|1|1|1|2|2|0|27/10/2026|ΤΡΙΤΗ|12|2|3.6|3.25',
+'7|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΓΑΛΛΙΑ Β|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|331|ΣΟΣΟ|ΑΝΕΣΙ|2.4|3.1|2.9|2|0|1|1|3|2|1|27/10/2026|ΤΡΙΤΗ|12|2.4|3.1|2.9',
+'8|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΓΑΛΛΙΑ Β|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|328|ΚΛΕΡΜΟΝΤ|ΓΚΙΝΚΑΜΠ|3.05|3|2.22|Χ|0|2|0|2|2|0|27/10/2026|ΤΡΙΤΗ|12|3.05|3.3|2.22',
+'9|ΠΑΡΑΣΚΕΥΗ|23/10/2026|20|ΓΑΛΛΙΑ Β|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|330|ΠΟ|ΓΚΡΕΝΟΜΠ|1.85|3.4|4|Χ|0|1|2|1|1|0|27/10/2026|ΤΡΙΤΗ|12|1.85|3.4|4',
+'10|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|ΒΕΛΓΙΟ|ΚΥΡΙΑΚΗ|25/10/2026|19|792|ΓΑΝΔΗ|ΑΝΤΕΡΛΕΧΤ|2.37|3.2|3|Χ|1|0|4|0|1|0|27/10/2026|ΤΡΙΤΗ|12|2.47|3.15|2.87',
+'11|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|ΟΛΛΑΝΔΙΑ|ΣΑΒΒΑΤΟ|24/10/2026|22|617|ΝΤΕΝ ΧΑΑΓΚ|ΧΕΡΕΝΦΕΝ|3.05|4|2.02|Χ|0|1|2|3|2|0|27/10/2026|ΤΡΙΤΗ|12|3.15|4|1.97',
+'12|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|ΤΟΥΡΚΙΑ|ΣΑΒΒΑΤΟ|24/10/2026|19|576|ΣΑΜΣΟΥΝΣΠΟΡ|ΑΜΕΝΤ ΣΠΟΡ|3.35|3.45|2.05|Χ|1|0|1|2|2|0|27/10/2026|ΤΡΙΤΗ|12|2.95|3.35|2.25',
+'13|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|ΤΟΥΡΚΙΑ|ΔΕΥΤΕΡΑ|26/10/2026|20|836|ΓΑΛΑΤΑΣΑΡΑΙ|ΦΕΝΕΡΜΠΑΧΤΣΕ|2.15|3.65|2.9|1|2|0|2|1|1|1|27/10/2026|ΤΡΙΤΗ|12|1.88|3.7|3.5',
+'14|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|ΕΛΛΑΔΑ|ΣΑΒΒΑΤΟ|24/10/2026|19|584|ΑΣΤΕΡΑΣ ΤΡΙΠΟΛΗΣ|ΛΕΒΑΔΕΙΑΚΟΣ|2|3.2|4|Χ|0|0|0|0|Χ|1|27/10/2026|ΤΡΙΤΗ|12|2|3.2|4',
+'15|ΠΑΡΑΣΚΕΥΗ|23/10/2026|21|ΠΟΡΤΟΓΑΛΙΑ|ΚΥΡΙΑΚΗ|25/10/2026|20|799|ΡΙΟ ΑΒΕ|ΦΑΜΑΛΙΚΑΟ|3.65|3.35|2|Χ|0|0|0|4|2|1|27/10/2026|ΤΡΙΤΗ|12|3.75|3.25|2.02'
+].join('\n').replace(/\|/g, '\t');
+
+/* ---------- helpers ---------- */
+var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+var nf = function (x, d) { d = d === undefined ? 2 : d; return isFinite(x) ? x.toLocaleString('el-GR', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—'; };
+var pct = function (x) { return isFinite(x) ? (x * 100).toLocaleString('el-GR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' : '—'; };
+var signed = function (x) { return isFinite(x) ? (x > 0 ? '+' : '') + nf(x) : '—'; };
+var cls = function (x) { return x > 0 ? 'pos' : x < 0 ? 'neg' : ''; };
+function num(s) { var v = parseFloat(String(s === undefined ? '' : s).replace(',', '.')); return isFinite(v) ? v : NaN; }
+function sign(s) { return String(s === undefined ? '' : s).trim().toUpperCase().replace(/Χ/g, 'X'); }
+function wilson(k, n) {
+  if (!n) return [NaN, NaN];
+  var z = 1.96, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+  return [Math.max(0, c - h), Math.min(1, c + h)];
+}
+function niceTicks(lo, hi, cnt) {
+  var span = (hi - lo) || 1, raw = span / cnt, mag = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / mag;
+  var step = (r >= 7.5 ? 10 : r >= 3.5 ? 5 : r >= 1.5 ? 2 : 1) * mag;
+  var a = Math.floor(lo / step + 1e-9) * step, out = [];
+  for (var v = a; v < hi + step * 0.999; v += step) { out.push(+v.toFixed(10)); if (out.length > 40) break; }
+  return out;
+}
+
+/* ---------- parsing ---------- */
+function cols() {
+  var g = function (id) { return Math.max(1, parseInt($(id).value, 10) || 1) - 1; };
+  return { prop: g('#m-prop'), res: g('#m-res'), succ: g('#m-succ'), pre: g('#m-pre'), post: g('#m-post'), lg: g('#m-lg'), home: g('#m-home'), away: g('#m-away') };
+}
+function parse(text, c, mode) {
+  var rows = [], notes = [], skipped = 0, headers = 0, pending = 0;
+  text.split(/\r?\n/).forEach(function (line, li) {
+    if (!line.trim()) return;
+    var cells = (line.indexOf('\t') >= 0 ? line.split('\t') : line.split(/\s{2,}|;/)).map(function (s) { return s.trim(); });
+    if (!/^\d+$/.test(cells[0] || '')) { headers++; return; }
+    if (cells.length <= Math.max(c.prop, c.res)) { skipped++; notes.push('Γραμμή ' + (li + 1) + ': έχει μόνο ' + cells.length + ' στήλες, παραλείφθηκε.'); return; }
+    var prop = sign(cells[c.prop]), res = sign(cells[c.res]);
+    var one = function (s) { return s === '1' || s === 'X' || s === '2'; };
+    var expected = one(prop) && one(res) ? prop === res : null;
+    var sc = (cells[c.succ] || '').trim(), okCol = sc === '1' ? true : sc === '0' ? false : null;
+    var ok = mode === 'calc' ? expected : (okCol !== null ? okCol : expected);
+    if (mode === 'col' && expected === false && okCol === true) ok = false;
+    var row = {
+      n: cells[0], line: li + 1, lg: cells[c.lg] || '', home: cells[c.home] || '', away: cells[c.away] || '',
+      prop: prop, res: res, ok: ok,
+      pre: [num(cells[c.pre]), num(cells[c.pre + 1]), num(cells[c.pre + 2])],
+      post: [num(cells[c.post]), num(cells[c.post + 1]), num(cells[c.post + 2])]
+    };
+    if (ok === null) { pending++; return; }
+    if (okCol !== null && expected !== null && okCol !== expected) notes.push('Γραμμή ' + (li + 1) + ' (' + row.home + ' - ' + row.away + '): πρόταση ' + prop + ', αποτέλεσμα ' + res + ', αλλά ΕΠΙΤΥΧΙΑ = ' + sc + '. ' + (expected === false && okCol === true ? 'Μετρήθηκε ως αποτυχία. Διόρθωσε την τιμή στη στήλη ΕΠΙΤΥΧΙΑ.' : (mode === 'col' ? 'Χρησιμοποιείται η τιμή της στήλης. Διόρθωσέ την.' : 'Χρησιμοποιείται η σύγκριση πρότασης και αποτελέσματος.')));
+    rows.push(row);
+  });
+  return { rows: rows, notes: notes, skipped: skipped, headers: headers, pending: pending };
+}
+
+/* ---------- analysis ---------- */
+var SIGNS = ['1', 'X', '2'];
+function oddsFor(r, set) { var i = SIGNS.indexOf(r.prop); return i < 0 ? NaN : r[set][i]; }
+
+function section1(rows, set) {
+  var el = $('#s1');
+  if (!rows.length) { el.innerHTML = '<p class="empty">Δεν υπάρχουν αγώνες με αποτέλεσμα.</p>'; return; }
+  var tot = rows.filter(function (r) { return r.ok; }).length, all = tot / rows.length, h = '<div class="bars">';
+  SIGNS.forEach(function (sg) {
+    var g = rows.filter(function (r) { return r.prop === sg; }), w = g.filter(function (r) { return r.ok; }).length, p = g.length ? w / g.length : NaN, ci = wilson(w, g.length);
+    h += '<span class="sg">' + sg + '</span><div class="tr" role="img" aria-label="Πρόταση ' + sg + ': ' + pct(p) + '"><i style="width:' + (g.length ? (p * 100).toFixed(1) : 0) + '%"></i><u style="left:' + (all * 100).toFixed(1) + '%"></u></div>' +
+      '<span class="v">' + (g.length ? pct(p) : '—') + ' <small>' + w + ' / ' + g.length + (g.length ? ' · 95%: ' + pct(ci[0]) + '–' + pct(ci[1]) : '') + '</small></span>';
+  });
+  h += '</div><p class="hint">Το διάστημα 95% (Wilson) δείχνει πόσο αβέβαιο είναι το ποσοστό όταν οι αγώνες είναι λίγοι.</p>';
+  var other = rows.filter(function (r) { return SIGNS.indexOf(r.prop) < 0; }).length;
+  if (other) h += '<p class="hint">' + other + ' αγώνες έχουν πρόταση εκτός από 1, Χ, 2 και μετράνε μόνο στο γενικό ποσοστό.</p>';
+  el.innerHTML = h;
+}
+function section2(rows) {
+  var el = $('#s2');
+  if (!rows.length) { el.innerHTML = '<p class="empty">Δεν υπάρχουν αγώνες με αποτέλεσμα.</p>'; return; }
+  var w = rows.filter(function (r) { return r.ok; }).length, p = w / rows.length, ci = wilson(w, rows.length);
+  el.innerHTML = '<div class="big"><span class="n">' + pct(p) + '</span><span class="l">' + w + ' επιτυχίες σε ' + rows.length + ' αγώνες<br>95%: ' + pct(ci[0]) + ' έως ' + pct(ci[1]) + '</span></div>';
+}
+
+function pca(rows) {
+  var d = rows.filter(function (r) { return r.pre.every(isFinite); });
+  if (d.length < 3) return { err: 'Χρειάζονται τουλάχιστον 3 αγώνες με πλήρεις αποδοχές Π για PCA.', excluded: rows.length - d.length };
+  var a = d.map(function (r) { return r.pre[1]; }), b = d.map(function (r) { return r.pre[2]; });
+  var mean = function (v) { return v.reduce(function (s, x) { return s + x; }, 0) / v.length; };
+  var sd = function (v, m) { return Math.sqrt(v.reduce(function (s, x) { return s + (x - m) * (x - m); }, 0) / v.length); };
+  var ma = mean(a), mb = mean(b), sa = sd(a, ma), sb = sd(b, mb);
+  if (!sa || !sb) return { err: 'Η στήλη ΧΙ Π ή ΔΙΠΛΟ Π έχει σταθερή τιμή, οπότε δεν ορίζεται PCA.', excluded: rows.length - d.length };
+  var za = a.map(function (x) { return (x - ma) / sa; }), zb = b.map(function (x) { return (x - mb) / sb; });
+  var r = za.reduce(function (s, x, i) { return s + x * zb[i]; }, 0) / za.length, sg = r < 0 ? -1 : 1, k = Math.SQRT1_2;
+  var pts = d.map(function (row, i) { return { row: row, x: row.pre[0], y: k * (za[i] + sg * zb[i]) }; });
+  return { pts: pts, r: r, load: [k, sg * k], expl: (1 + Math.abs(r)) / 2, excluded: rows.length - d.length };
+}
+var shown = [];
+function section3(rows) {
+  var el = $('#s3'), note = $('#pca-note');
+  var P = pca(rows);
+  shown = [];
+  if (P.err) { el.innerHTML = '<p class="empty">' + esc(P.err) + '</p>'; note.textContent = ''; return; }
+  var W = 700, H = 430, m = { l: 58, r: 22, t: 16, b: 52 };
+  var xs = P.pts.map(function (p) { return p.x; }), ys = P.pts.map(function (p) { return p.y; });
+  var xp = Math.max(0.05, (Math.max.apply(null, xs) - Math.min.apply(null, xs)) * 0.08), yp = Math.max(0.1, (Math.max.apply(null, ys) - Math.min.apply(null, ys)) * 0.08);
+  var xt = niceTicks(Math.min.apply(null, xs) - xp, Math.max.apply(null, xs) + xp, 6), yt = niceTicks(Math.min.apply(null, ys) - yp, Math.max.apply(null, ys) + yp, 6);
+  var x0 = xt[0], x1 = xt[xt.length - 1], y0 = yt[0], y1 = yt[yt.length - 1];
+  var X = function (v) { return m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r); }, Y = function (v) { return H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b); };
+  var s = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Διάγραμμα διασποράς: ΑΣΣΟΣ Π στον άξονα x, PCA στον y">';
+  xt.forEach(function (v) { s += '<line class="gl" x1="' + X(v).toFixed(1) + '" y1="' + m.t + '" x2="' + X(v).toFixed(1) + '" y2="' + (H - m.b) + '"/><text class="tk" x="' + X(v).toFixed(1) + '" y="' + (H - m.b + 18) + '" text-anchor="middle">' + nf(v, v % 1 ? 2 : 0) + '</text>'; });
+  yt.forEach(function (v) { s += '<line class="gl" x1="' + m.l + '" y1="' + Y(v).toFixed(1) + '" x2="' + (W - m.r) + '" y2="' + Y(v).toFixed(1) + '"/><text class="tk" x="' + (m.l - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + nf(v, 1) + '</text>'; });
+  s += '<line class="axl" x1="' + m.l + '" y1="' + (H - m.b) + '" x2="' + (W - m.r) + '" y2="' + (H - m.b) + '"/><line class="axl" x1="' + m.l + '" y1="' + m.t + '" x2="' + m.l + '" y2="' + (H - m.b) + '"/>';
+  s += '<text class="at" x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 10) + '" text-anchor="middle">ΑΣΣΟΣ Π (απόδοση)</text>';
+  s += '<text class="at" transform="translate(14 ' + ((m.t + H - m.b) / 2) + ') rotate(-90)" text-anchor="middle">PCA (ΧΙ Π, ΔΙΠΛΟ Π), PC1</text>';
+  P.pts.forEach(function (p, i) {
+    shown.push(p);
+    var cx = X(p.x).toFixed(1), cy = Y(p.y).toFixed(1), t = esc(p.row.home + ' - ' + p.row.away + ' · ' + (p.row.ok ? 'επιτυχία' : 'αποτυχία'));
+    s += '<g class="pt" tabindex="0" data-i="' + i + '" role="button" aria-label="' + t + '"><title>' + t + '</title>' +
+      (p.row.ok ? '<circle class="okp" cx="' + cx + '" cy="' + cy + '" r="7"/>' : '<rect class="nop" x="' + (cx - 6.5) + '" y="' + (cy - 6.5) + '" width="13" height="13" transform="rotate(45 ' + cx + ' ' + cy + ')"/>') + '</g>';
+  });
+  s += '</svg>';
+  el.innerHTML = s;
+  note.innerHTML = 'PC1 από τις τυποποιημένες στήλες ΧΙ Π και ΔΙΠΛΟ Π: φορτία (' + nf(P.load[0], 3) + '; ' + nf(P.load[1], 3) + '), εξηγεί ' + pct(P.expl) + ' της διακύμανσης, συσχέτιση r = ' + nf(P.r, 3) + '.' + (P.excluded ? ' Εξαιρέθηκαν ' + P.excluded + ' αγώνες χωρίς πλήρεις αποδόσεις Π.' : '');
+  $('#sc-read').textContent = 'Διάλεξε ένα σημείο για να δεις τον αγώνα.';
+}
+function showPoint(i) {
+  var p = shown[i]; if (!p) return;
+  var r = p.row;
+  $('#sc-read').innerHTML = '<b>' + esc(r.home) + ' - ' + esc(r.away) + '</b> ' + esc(r.lg) + '<br>πρόταση ' + esc(r.prop) + ' · αποτέλεσμα ' + esc(r.res) + ' · <b class="' + (r.ok ? 'pos' : 'neg') + '">' + (r.ok ? 'επιτυχία' : 'αποτυχία') + '</b><br>Π: ' + r.pre.map(function (v) { return nf(v); }).join(' / ') + ' · ΑΣΣΟΣ Π ' + nf(p.x) + ' · PC1 ' + nf(p.y, 2);
+}
+
+function section4(rows, set, stake) {
+  var el = $('#s4');
+  var bets = rows.map(function (r) { return { r: r, o: oddsFor(r, set) }; });
+  var used = bets.filter(function (b) { return isFinite(b.o) && b.o > 1; });
+  var dropped = bets.length - used.length;
+  if (!used.length) { el.innerHTML = '<p class="empty">Δεν υπάρχουν αγώνες με πρόταση 1, Χ ή 2 και απόδοση.</p>'; return; }
+  var cum = 0, series = [0];
+  used.forEach(function (b) { b.pl = b.r.ok ? stake * (b.o - 1) : -stake; cum += b.pl; b.cum = cum; series.push(cum); });
+  var staked = used.length * stake, wins = used.filter(function (b) { return b.r.ok; }).length;
+  var h = '<div class="big"><span class="n ' + cls(cum) + '">' + signed(cum) + '</span><span class="l">καθαρό αποτέλεσμα σε ' + used.length + ' αγώνες<br>επένδυση ' + nf(staked) + ' · απόδοση επένδυσης ' + (staked ? pct(cum / staked) : '—') + ' · ' + wins + ' επιτυχίες</span></div>';
+  h += '<div class="tw"><table><thead><tr><th>Πρόταση</th><th class="num">Αγώνες</th><th class="num">Επιτυχίες</th><th class="num">Μέση απόδοση</th><th class="num">Κέρδος / Ζημιά</th><th class="num">ROI</th></tr></thead><tbody>';
+  SIGNS.forEach(function (sg) {
+    var g = used.filter(function (b) { return b.r.prop === sg; });
+    if (!g.length) { h += '<tr><td class="mono">' + sg + '</td><td class="num">0</td><td class="num">0</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>'; return; }
+    var pl = g.reduce(function (s, b) { return s + b.pl; }, 0), w = g.filter(function (b) { return b.r.ok; }).length, ao = g.reduce(function (s, b) { return s + b.o; }, 0) / g.length;
+    h += '<tr><td class="num" style="text-align:left">' + sg + '</td><td class="num">' + g.length + '</td><td class="num">' + w + '</td><td class="num">' + nf(ao) + '</td><td class="num ' + cls(pl) + '">' + signed(pl) + '</td><td class="num ' + cls(pl) + '">' + pct(pl / (g.length * stake)) + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  var W = 700, H = 320, m = { l: 58, r: 22, t: 16, b: 44 }, N = series.length - 1;
+  var lo = Math.min.apply(null, series.concat([0])), hi = Math.max.apply(null, series.concat([0]));
+  var yt = niceTicks(lo - (hi - lo) * 0.06, hi + (hi - lo) * 0.06 || 1, 5), y0 = yt[0], y1 = yt[yt.length - 1];
+  var X = function (i) { return m.l + (N ? i / N : 0.5) * (W - m.l - m.r); }, Y = function (v) { return H - m.b - (v - y0) / (y1 - y0) * (H - m.t - m.b); };
+  var s = '<svg class="ch" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Σωρευτικό κέρδος ανά αγώνα">';
+  yt.forEach(function (v) { s += '<line class="gl" x1="' + m.l + '" y1="' + Y(v).toFixed(1) + '" x2="' + (W - m.r) + '" y2="' + Y(v).toFixed(1) + '"/><text class="tk" x="' + (m.l - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + nf(v, Math.abs(y1 - y0) < 8 ? 1 : 0) + '</text>'; });
+  var step = Math.max(1, Math.ceil(N / 10));
+  for (var i = 0; i <= N; i += step) s += '<text class="tk" x="' + X(i).toFixed(1) + '" y="' + (H - m.b + 18) + '" text-anchor="middle">' + i + '</text>';
+  s += '<line class="zl" x1="' + m.l + '" y1="' + Y(0).toFixed(1) + '" x2="' + (W - m.r) + '" y2="' + Y(0).toFixed(1) + '"/>';
+  s += '<polyline class="ln" points="' + series.map(function (v, i) { return X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join(' ') + '"/>';
+  used.forEach(function (b, i) {
+    var cx = X(i + 1).toFixed(1), cy = Y(b.cum).toFixed(1), t = esc(b.r.home + ' - ' + b.r.away + ': ' + signed(b.pl) + ' (σύνολο ' + signed(b.cum) + ')');
+    s += b.r.ok ? '<circle class="okp" cx="' + cx + '" cy="' + cy + '" r="5"><title>' + t + '</title></circle>' : '<rect class="nop" x="' + (cx - 4.6) + '" y="' + (cy - 4.6) + '" width="9.2" height="9.2" transform="rotate(45 ' + cx + ' ' + cy + ')"><title>' + t + '</title></rect>';
+  });
+  s += '<text class="at" x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 6) + '" text-anchor="middle">αριθμός αγώνων που παίχτηκαν, με τη σειρά του πίνακα</text></svg>';
+  h += s;
+  if (dropped) h += '<p class="hint">' + dropped + ' αγώνες δεν μπήκαν στην προσομοίωση: η πρόταση δεν είναι 1, Χ ή 2, ή λείπει η απόδοση.</p>';
+  h += '<p class="hint">Κάθε αγώνας παίζεται με σταθερό ποντάρισμα στο σημείο της πρότασης. Κέρδος = ποντάρισμα × (απόδοση − 1), ζημιά = −ποντάρισμα.</p>';
+  el.innerHTML = h;
+  return used;
+}
+
+function combosCount(n, k) { var c = 1; for (var i = 0; i < k; i++) c = c * (n - i) / (i + 1); return c; }
+var KNAME = { 2: 'δυάδες', 3: 'τριάδες', 4: 'τετράδες' };
+function sectionCombos(rows, set, stake) {
+  var el = $('#s45');
+  var legs = rows.map(function (r) { return { r: r, o: oddsFor(r, set) }; })
+    .filter(function (b) { return isFinite(b.o) && b.o > 1; });
+  var dropped = rows.length - legs.length;
+  if (legs.length < 2) {
+    el.innerHTML = '<p class="empty">Χρειάζονται τουλάχιστον 2 αγώνες με πρόταση 1, Χ ή 2 και έγκυρη απόδοση.</p>';
+    return;
+  }
+  var h = '<div class="tw"><table><thead><tr><th>Τύπος</th><th class="num">Συνδυασμοί</th><th class="num">Κερδισμένοι</th><th class="num">Ποσοστό</th><th class="num">Ποντάρισμα</th><th class="num">Κέρδος / Ζημιά</th><th class="num">ROI</th></tr></thead><tbody>';
+  var winTables = '';
+  [2, 3, 4].forEach(function (k) {
+    if (legs.length < k) { h += '<tr><td>' + KNAME[k] + '</td><td class="num">0</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>'; return; }
+    var n = legs.length, total = combosCount(n, k);
+    if (total > 300000) { h += '<tr><td>' + KNAME[k] + '</td><td class="num">' + total.toLocaleString('el-GR') + '</td><td colspan="5">Πάρα πολλοί συνδυασμοί, παραλείφθηκε.</td></tr>'; return; }
+    var wins = 0, profit = 0, best = [];
+    var combo = [];
+    (function rec(start, depth, odds, allOk) {
+      if (depth === k) {
+        profit += allOk ? stake * (odds - 1) : -stake;
+        if (allOk) { wins++; if (best.length < 25) best.push({ legs: combo.slice(), odds: odds }); }
+        return;
+      }
+      for (var i = start; i <= n - (k - depth); i++) {
+        var b = legs[i]; combo.push(b); rec(i + 1, depth + 1, odds * b.o, allOk && b.r.ok); combo.pop();
+      }
+    })(0, 0, 1, true);
+    var staked = total * stake;
+    h += '<tr><td>' + KNAME[k] + ' (C(' + n + ',' + k + '))</td><td class="num">' + total.toLocaleString('el-GR') + '</td><td class="num">' + wins + '</td><td class="num">' + pct(wins / total) + '</td><td class="num">' + nf(staked) + '</td><td class="num ' + cls(profit) + '">' + signed(profit) + '</td><td class="num ' + cls(profit) + '">' + (staked ? pct(profit / staked) : '—') + '</td></tr>';
+    if (wins && best.length) {
+      winTables += '<details><summary>Κερδισμένες ' + KNAME[k] + ': ' + wins.toLocaleString('el-GR') + ' από ' + total.toLocaleString('el-GR') + ' (' + pct(wins / total) + ')' + (wins > best.length ? ' — εμφανίζονται οι ' + best.length + ' πρώτες' : '') + '</summary><div class="tw scroll"><table><thead><tr><th>Αγώνες</th><th class="num">Απόδοση</th><th class="num">Κέρδος</th></tr></thead><tbody>';
+      best.forEach(function (w) {
+        winTables += '<tr><td>' + esc(w.legs.map(function (b) { return b.r.home + ' - ' + b.r.away + ' (' + b.r.prop + ')'; }).join(' · ')) + '</td><td class="num">' + nf(w.odds) + '</td><td class="num pos">' + signed(stake * (w.odds - 1)) + '</td></tr>';
+      });
+      winTables += '</tbody></table></div></details>';
+    }
+  });
+  h += '</tbody></table></div>';
+  el.innerHTML = h + (winTables ? '<div style="display:flex;flex-direction:column;gap:.6rem;margin-top:.8rem">' + winTables + '</div>' : '') +
+    (dropped ? '<p class="hint">' + dropped + ' αγώνες δεν μπήκαν στους συνδυασμούς: η πρόταση δεν είναι 1, Χ ή 2, ή λείπει η απόδοση.</p>' : '');
+}
+
+function section5(rows, set, stake) {
+  var el = $('#s5');
+  if (!rows.length) { el.innerHTML = '<p class="empty">Δεν διαβάστηκε κανένας αγώνας με αποτέλεσμα.</p>'; return; }
+  var cum = 0, h = '<div class="tw scroll"><table><thead><tr><th class="num">#</th><th>Διοργάνωση</th><th>Αγώνας</th><th>Πρόταση</th><th>Αποτέλεσμα</th><th>Εκβαση</th><th class="num">Απόδοση</th><th class="num">+/−</th><th class="num">Σύνολο</th></tr></thead><tbody>';
+  rows.forEach(function (r) {
+    var o = oddsFor(r, set), valid = isFinite(o) && o > 1, pl = valid ? (r.ok ? stake * (o - 1) : -stake) : NaN;
+    if (valid) cum += pl;
+    h += '<tr><td class="num">' + esc(r.n) + '</td><td>' + esc(r.lg) + '</td><td>' + esc(r.home) + ' - ' + esc(r.away) + '</td><td class="num" style="text-align:left">' + esc(r.prop) + '</td><td class="num" style="text-align:left">' + esc(r.res) + '</td><td><span class="chip ' + (r.ok ? 'ok' : 'no') + '">' + (r.ok ? '✓ επιτυχία' : '✗ αποτυχία') + '</span></td><td class="num">' + (valid ? nf(o) : '—') + '</td><td class="num ' + cls(pl) + '">' + (valid ? signed(pl) : '—') + '</td><td class="num ' + cls(cum) + '">' + (valid ? signed(cum) : '—') + '</td></tr>';
+  });
+  el.innerHTML = h + '</tbody></table></div>';
+}
+
+/* ---------- main ---------- */
+var timer = null;
+function run() {
+  var text = $('#inp').value;
+  try { localStorage.setItem(KEY, text); } catch (e) { /* storage unavailable */ }
+  var mode = $('#succ-mode').value, set = $('#odds-set').value, stake = parseFloat($('#stake').value);
+  if (!(stake >= 0)) stake = 0;
+  var P = parse(text, cols(), mode);
+  $('#status').innerHTML = '<b>' + P.rows.length + '</b> αγώνες με αποτέλεσμα' + (P.pending ? ' · ' + P.pending + ' χωρίς αποτέλεσμα (αγνοήθηκαν)' : '') + (P.headers ? ' · ' + P.headers + ' γραμμή κεφαλίδας παραλείφθηκε' : '') + (P.skipped ? ' · ' + P.skipped + ' ελλιπείς γραμμές' : '');
+  $('#warns').innerHTML = P.notes.map(function (n) { return '<div>' + esc(n) + '</div>'; }).join('');
+  var cStake = parseFloat($('#c-stake').value); if (!(cStake >= 0)) cStake = 0;
+  section1(P.rows, set); section2(P.rows); section3(P.rows); section4(P.rows, set, stake); sectionCombos(P.rows, $('#c-odds').value, cStake); section5(P.rows, set, stake);
+}
+function later() { clearTimeout(timer); timer = setTimeout(run, 120); }
+
+var init = SAMPLE;
+try { var saved = localStorage.getItem(KEY); if (saved !== null && saved.trim()) init = saved; } catch (e) { /* ignore */ }
+$('#inp').value = init;
+$('#inp').addEventListener('input', later);
+['#succ-mode', '#odds-set', '#stake', '#c-stake', '#c-odds', '#m-prop', '#m-res', '#m-succ', '#m-pre', '#m-post', '#m-lg', '#m-home', '#m-away'].forEach(function (id) { $(id).addEventListener('input', later); $(id).addEventListener('change', later); });
+$('#b-sample').addEventListener('click', function () { $('#inp').value = SAMPLE; run(); });
+$('#b-clear').addEventListener('click', function () { $('#inp').value = ''; run(); $('#inp').focus(); });
+$('#s3').addEventListener('click', function (e) { var g = e.target.closest('.pt'); if (g) showPoint(+g.dataset.i); });
+$('#s3').addEventListener('pointerover', function (e) { var g = e.target.closest('.pt'); if (g) showPoint(+g.dataset.i); });
+$('#s3').addEventListener('focusin', function (e) { var g = e.target.closest('.pt'); if (g) showPoint(+g.dataset.i); });
+run();
+})();
+</script>
+
+</body></html>
